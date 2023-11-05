@@ -2,7 +2,7 @@
 #define CACTUS_RT_EXAMPLES_MESSAGE_PASSING_EXAMPLE_DATA_LOGGER_H_
 
 #include <cactus_rt/rt.h>
-#include <readerwriterqueue.h>
+#include <readerwriterqueue/readerwriterqueue.h>
 
 #include <atomic>
 #include <cstdint>

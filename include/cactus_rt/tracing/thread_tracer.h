@@ -5,7 +5,7 @@
 #include "thread_tracer.disabled.h"
 #else
 
-#include <readerwriterqueue.h>
+#include <readerwriterqueue/readerwriterqueue.h>
 #include <unistd.h>
 
 #include <cstdint>

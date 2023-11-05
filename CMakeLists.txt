@@ -9,7 +9,7 @@ option(ENABLE_TRACING "Enable runtime tracing support" ON)
 option(BUILD_DOCS "Build documentations" OFF)
 
 # Used for building cactus-rt when all dependencies are vendored
-option(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES "Fetch dependencies during build" ON)
+option(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES "Fetch dependencies during build" OFF)
 
 # https://stackoverflow.com/questions/5395309/how-do-i-force-cmake-to-include-pthread-option-during-compilation
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -50,6 +50,26 @@ if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
   FetchContent_MakeAvailable(readerwriterqueue)
   get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
   set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
+
+else()
+  find_package(quill REQUIRED)
+  #find_package(readerwriterqueue REQUIRED)
+
+  #Include(FetchContent)
+  #FetchContent_Declare(
+  #  readerwriterqueue
+  #  GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue.git
+  #  GIT_TAG           v1.0.6
+  #)
+
+  #FetchContent_MakeAvailable(readerwriterqueue)
+  #get_target_property(READERWRITERQUEUE_INC readerwriterqueue INTERFACE_INCLUDE_DIRECTORIES)
+  #set_target_properties(readerwriterqueue PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${READERWRITERQUEUE_INC}")
+
+  #readerwriterqueue installed in /usr/local
+  include_directories(
+    /usr/local/include
+  )
 endif()
 
 ##########################################################
@@ -121,13 +141,22 @@ target_include_directories(cactus_rt
   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_link_libraries(cactus_rt
-  PUBLIC
-  quill::quill
-  readerwriterqueue
-  PRIVATE
-  Threads::Threads
-)
+if(CACTUS_RT_ENABLE_FETCH_DEPENDENCIES)
+  target_link_libraries(cactus_rt
+    PUBLIC
+    quill::quill
+    readerwriterqueue
+    PRIVATE
+    Threads::Threads
+  )
+else() #readwriterqueue is header only
+  target_link_libraries(cactus_rt
+    PUBLIC
+    quill::quill
+    PRIVATE
+    Threads::Threads
+  )
+endif()
 
 # Use a bounded queue
 target_compile_definitions(cactus_rt PUBLIC QUILL_USE_BOUNDED_QUEUE)
@@ -164,6 +193,7 @@ setup_cactus_rt_target_options(cactus_rt)
 
 # Build tests, examples, docs, only if this project is not embedded in another
 # project.
+
 if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
   include(CTest)
 
@@ -201,4 +231,14 @@ if(${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME})
       VERBATIM
     )
   endif()
+
+  install(
+    DIRECTORY include/
+    DESTINATION include
+  )
+
+  install(TARGETS cactus_rt
+          ARCHIVE DESTINATION lib
+          LIBRARY DESTINATION lib
+          RUNTIME DESTINATION bin)
 endif()
